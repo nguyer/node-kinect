@@ -1,0 +1,13 @@
+{
+  "name": "kinect",
+  "version": "0.1.0",
+  "author": "Pedro Teixeira",
+  "main": "kinect.js",
+  "devDependencies": {
+    "tap": "*"
+  },
+  "scripts": {
+    "install": "node-waf configure build",
+    "test":    "node test/*.js"
+  }
+}
