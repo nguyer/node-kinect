@@ -19,7 +19,7 @@ namespace kinect {
       virtual       ~Context();
 
     private:
-      Context();
+      Context(int user_device_number);
       static Handle<Value>  New(const Arguments& args);
       static Context*       GetContext(const Arguments &args);
       void                  Close();
@@ -35,7 +35,20 @@ namespace kinect {
 
     assert(args.IsConstructCall());
 
-    Context *context = new Context();
+    int user_device_number = 0;
+    if (args.Length() == 1) {
+      if (!args[0]->IsNumber()) {
+        return ThrowException(Exception::TypeError(
+          String::New("user_device_number must be an integer")));
+      }
+      user_device_number = (int) args[0]->ToInteger()->Value();
+      if (user_device_number < 0) {
+        return ThrowException(Exception::RangeError(
+          String::New("user_device_number must be a natural number")));
+      }
+    }
+
+    Context *context = new Context(user_device_number);
     context->Wrap(args.This());
 
     return args.This();
@@ -48,27 +61,34 @@ namespace kinect {
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
+    NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
+
     target->Set(String::NewSymbol("Context"), t->GetFunction());
   }
 
-  Context::Context() : ObjectWrap() {
+  Context::Context(int user_device_number) : ObjectWrap() {
+    context_ = NULL;
+    device_  = NULL;
+
     if (freenect_init(&context_, NULL) < 0) {
-      throw std::runtime_error("Error initializing freenect context");
+      ThrowException(Exception::Error(String::New("Error initializing freenect context")));
+      return;
     }
     freenect_set_log_level(context_, FREENECT_LOG_DEBUG);
     freenect_select_subdevices(context_, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
     int nr_devices = freenect_num_devices (context_);
     if (nr_devices < 1) {
-      throw std::runtime_error("No devices present");
+      Close();
+      ThrowException(Exception::Error(String::New("No kinect devices present")));
+      return; 
     }
-
-    int user_device_number = 0;
 
     // TODO: select device in constructor
 
     if (freenect_open_device(context_, &device_, user_device_number) < 0) {
-      std::runtime_error("Could not open device number\n");
       Close();
+      ThrowException(Exception::Error(String::New("Could not open device number\n")));
+      return;
     }
   }
 
@@ -79,8 +99,22 @@ namespace kinect {
 
   void
   Context::Close() {
+    
+    if (device_ != NULL) {
+      if (freenect_close_device(device_) < 0) {
+        ThrowException(Exception::Error(String::New(("Error closing device"))));
+        return;
+      }
+
+      device_ = NULL;
+    }
+
     if (context_ != NULL) {
-      if (freenect_shutdown(context_) < 0) throw std::runtime_error("Error shutting down");
+      if (freenect_shutdown(context_) < 0) {
+        ThrowException(Exception::Error(String::New(("Error shutting down"))));
+        return;
+      }
+        
       context_ = NULL;
     }
   }
@@ -96,7 +130,7 @@ namespace kinect {
     return Undefined();
    }
 
-  Handle<Value>
+  void
   Initialize(Handle<Object> target) {
     Context::Initialize(target);
   }
