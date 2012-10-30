@@ -11,7 +11,7 @@ Then:
 
 ```sh
 $ git clone
-```
+``
 
 # Test
 
@@ -65,3 +65,9 @@ Accepts these strings as sole argument:
 * "yellow"
 * "blink green"
 * "blink red yellow"
+
+# FAQ
+
+## Can you control more than 1 kinect device at the same time?
+
+Yes, create different contexts with a different `device` options each.
