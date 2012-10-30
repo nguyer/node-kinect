@@ -10,7 +10,8 @@ Kinect in Node.js.
 Then:
 
 ```sh
-$ git clone 
+$ git clone
+```
 
 # Test
 
