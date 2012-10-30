@@ -1,0 +1,39 @@
+var kinect = require('..');
+var assert = require('assert');
+
+describe("After initialized", function() {
+  var context = kinect({device: 0});
+
+  describe("Led", function() {
+
+    it("should throw when no string is specified", function() {
+      assert.throws(function() {
+        context.led();
+      });
+    });
+
+    it("should throw when a non-supported string is specified", function() {
+      assert.throws(function() {
+        context.led('pink');
+      });
+    });
+
+    ['off',
+     'green',
+     'red',
+     'yellow',
+     'blink green',
+     'blink red yellow',
+     'off'
+    ].forEach(function(color) {
+      it("gets " + color, function(done) {
+        this.timeout(5000);
+        context.led(color);
+        console.log('Should be ' + color + '...');
+        setTimeout(done, 3000);
+      });
+    });
+
+  });
+
+});

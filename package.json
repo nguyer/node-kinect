@@ -4,7 +4,7 @@
   "author": "Pedro Teixeira",
   "main": "kinect.js",
   "devDependencies": {
-    "tap": "*"
+    "mocha": "*"
   },
   "scripts": {
     "install": "node-waf configure build",

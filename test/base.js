@@ -1,15 +1,18 @@
-var test = require('tap').test;
 var kinect = require('..');
+var assert = require('assert');
 
-test('Initializes and shuts down', function(t) {
-  var context = kinect({device: 0});
-  context.close();
-  t.end();
-});
-
-test('Fails on device not present', function(t) {
-  t.throws(function() {
-    kinect({device: 1});
+describe("Initialization", function() {
+  it('Initializes and shuts down', function(done) {
+    var context = kinect({device: 0});
+    context.close();
+    done();
   });
-  t.end();
+
+  it('Fails on device not present', function(done) {
+    assert.throws(function() {
+      kinect({device: 1});
+    });
+    done();
+  });
 });
+

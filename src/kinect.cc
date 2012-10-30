@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdexcept>
 
+#include <string>
+//#include <iostream>
+
 using namespace node;
 using namespace v8;
 
@@ -15,19 +18,78 @@ namespace kinect {
 
   class Context : ObjectWrap {
     public:
-      static void   Initialize(v8::Handle<v8::Object> target);
-      virtual       ~Context();
+      static void   Initialize (v8::Handle<v8::Object> target);
+      virtual       ~Context   ();
 
     private:
       Context(int user_device_number);
-      static Handle<Value>  New(const Arguments& args);
-      static Context*       GetContext(const Arguments &args);
-      void                  Close();
-      static Handle<Value>  Close(const Arguments& args);
+      static Handle<Value>  New        (const Arguments& args);
+      static Context*       GetContext (const Arguments &args);
+      void                  Close      ();
+      static Handle<Value>  Close      (const Arguments &args);
+      void                  Led        (const std::string option);
+      static Handle<Value>  Led        (const Arguments &args);
 
       freenect_context*     context_;
       freenect_device*      device_;  
   };
+
+  Context *
+  Context::GetContext(const Arguments &args) {
+    return ObjectWrap::Unwrap<Context>(args.This());
+  }
+
+
+  /**** LED Control ******/
+
+  void
+  Context::Led(const std::string option) {
+    freenect_led_options ledCode;
+
+    if (option.compare("off") == 0) {
+      ledCode = LED_OFF;
+    } else if (option.compare("green") == 0) {
+      ledCode = LED_GREEN;
+    } else if (option.compare("red") == 0) {
+      ledCode = LED_RED;
+    } else if (option.compare("yellow") == 0) {
+      ledCode = LED_YELLOW;
+    } else if (option.compare("blink green") == 0) {
+      ledCode = LED_BLINK_GREEN;
+    } else if (option.compare("blink red yellow") == 0) {
+      ledCode = LED_BLINK_RED_YELLOW;
+    } else {
+      ThrowException(Exception::Error(String::New("Did not recognize given led code")));
+      return;
+    }
+
+    if (freenect_set_led(device_, ledCode) < 0) {
+      ThrowException(Exception::Error(String::New("Error setting led")));
+      return;
+    }
+  }
+
+  Handle<Value>
+  Context::Led(const Arguments& args) {
+    HandleScope scope;
+
+    if (args.Length() == 1) {
+      if (!args[0]->IsString()) {
+        return ThrowException(Exception::TypeError(
+          String::New("led argument must be a string")));
+      }
+    } else {
+      return ThrowException(Exception::Error(String::New("Expecting at least one argument with the led status")));
+    }
+
+    String::AsciiValue val(args[0]->ToString());
+    GetContext(args)->Led(std::string(*val));
+    //GetContext(args)->Led(std::string("green"));
+    return Undefined();
+   }
+
+
+  /********* Life Cycle ***********/
 
   Handle<Value>
   Context::New(const Arguments& args) {
@@ -62,6 +124,7 @@ namespace kinect {
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
+    NODE_SET_PROTOTYPE_METHOD(t, "led",   Led);
 
     target->Set(String::NewSymbol("Context"), t->GetFunction());
   }
@@ -90,11 +153,6 @@ namespace kinect {
       ThrowException(Exception::Error(String::New("Could not open device number\n")));
       return;
     }
-  }
-
-  Context *
-  Context::GetContext(const Arguments &args) {
-    return ObjectWrap::Unwrap<Context>(args.This());
   }
 
   void
@@ -134,6 +192,7 @@ namespace kinect {
   Initialize(Handle<Object> target) {
     Context::Initialize(target);
   }
+
 }
 
 extern "C" void
