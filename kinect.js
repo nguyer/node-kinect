@@ -15,7 +15,12 @@ Context.prototype.activate = function(wat) {
       process.nextTick(function() {
         self._kContext.setDepthCallback();
       });
-      
+      break;
+
+    case "video":
+      process.nextTick(function() {
+        self._kContext.setVideoCallback();
+      });
       break;
 
     default: throw new Error('Cannot activate ' + wat);
@@ -38,6 +43,10 @@ module.exports = function(options) {
 
   kContext.depthCallback = function depthCallback(depthBuffer, time) {
     context.emit('depth', depthBuffer, time);
+  };
+
+  kContext.videoCallback = function videoCallback(videoBuffer, time) {
+    context.emit('video', videoBuffer, time);
   };
   
   return context;

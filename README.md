@@ -70,7 +70,7 @@ Accepts these strings as sole argument:
 
 ## Can you control more than 1 kinect device at the same time?
 
-Yes, create different contexts with a different `device` options each.
+Yes, create different contexts with a different `device` option each.
 
 # License
 
