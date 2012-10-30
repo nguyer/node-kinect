@@ -16,7 +16,7 @@ $ git clone
 
 Plug your kinect and do:
 
-```bash
+```sh
 $ npm test
 ```
 
