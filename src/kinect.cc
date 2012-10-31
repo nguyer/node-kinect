@@ -27,6 +27,7 @@ namespace kinect {
       void                   DepthCallback    ();
       void                   VideoCallback    ();
       bool                   running_;
+      bool                   sending_;
       freenect_context*      context_;
       uv_async_t             uv_async_video_callback_;
       uv_async_t             uv_async_depth_callback_;
@@ -137,6 +138,7 @@ namespace kinect {
   video_callback(freenect_device *dev, void *video, uint32_t timestamp) {
     Context* context = (Context *) freenect_get_user(dev);
     assert(context != NULL);
+    if (context->sending_) return;
     context->uv_async_video_callback_.data = (void *) context;
     // uv_mutex_lock(&context->bufferMutex_);
     uv_async_send(&context->uv_async_video_callback_);
@@ -145,6 +147,7 @@ namespace kinect {
   void
   Context::VideoCallback() {
     
+    sending_ = true;
     assert(videoBuffer_ != NULL);
     
     if (videoCallbackSymbol.IsEmpty()) {
@@ -158,6 +161,7 @@ namespace kinect {
     
     Handle<Value> argv[1] = { videoBuffer_->handle_ };
     callback->Call(handle_, 1, argv);
+    sending_ = false;
     // uv_mutex_unlock(&bufferMutex_);
   }
 
