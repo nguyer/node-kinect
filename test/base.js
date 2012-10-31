@@ -1,7 +1,7 @@
 var Kinect = require('..');
 var assert = require('assert');
 
-describe("Initialization", function() {
+describe("Base", function() {
   var context;
 
   afterEach(function() {
@@ -21,11 +21,13 @@ describe("Initialization", function() {
     });
   });
 
-  it("Fails to activate unknown feature", function() {
-    context = Kinect();
-    assert.throws(function() {
-      context.activate('yabayaba');
-    });
+  describe('activation', function() {
+    it("Fails to activate unknown feature", function() {
+      context = Kinect();
+      assert.throws(function() {
+        context.activate('yabayaba');
+      });
+    });    
   });
 });
 

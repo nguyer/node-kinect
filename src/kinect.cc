@@ -1,8 +1,8 @@
 #define BUILDING_NODE_EXTENSION
 
 #include <v8.h>
-#include <node.h>
-#include <node_buffer.h>
+#include "node.h"
+#include "node_buffer.h"
 #include "uv.h"
 
 #include "libfreenect.h"
@@ -26,12 +26,11 @@ namespace kinect {
       virtual                ~Context   ();
       void                   DepthCallback    ();
       void                   VideoCallback    ();
-      v8::Local<v8::Object>  videoBuffer_;
-      v8::Local<v8::Object>  depthBuffer_;
       bool                   running_;
       freenect_context*      context_;
       uv_async_t             uv_async_video_callback_;
       uv_async_t             uv_async_depth_callback_;
+      uv_mutex_t             bufferMutex_;
 
     private:
       Context(int user_device_number);
@@ -47,14 +46,27 @@ namespace kinect {
       void                  SetDepthCallback ();
       static Handle<Value>  SetDepthCallback (const Arguments &args);      
 
+      // void                  SetVideoBuffer   (Local<Value> &buffer);
+      // static Handle<Value>  SetVideoBuffer   (const Arguments &args);      
+
       void                  SetVideoCallback ();
       static Handle<Value>  SetVideoCallback (const Arguments &args);      
+
+      void                  Pause            ();
+      static Handle<Value>  Pause            (const Arguments &args);      
+
+      void                  Resume           ();
+      static Handle<Value>  Resume           (const Arguments &args);      
 
       void                  InitProcessEventThread();
 
       bool                      depthCallback_;
       bool                      videoCallback_;
+      Buffer*                   videoBuffer_;
+      Handle<Value>             videoBufferPersistentHandle_;
+      Local<Value>              depthBuffer_;
       freenect_device*          device_;
+      freenect_frame_mode       mode_;
       uv_thread_t               event_thread_;
 
   };
@@ -64,7 +76,55 @@ namespace kinect {
     return ObjectWrap::Unwrap<Context>(args.This());
   }
 
+  /********************************/
+  /********* Flow *****************/
+  /********************************/
+
+  void
+  process_event_thread(void *arg) {
+    Context * context = (Context *) arg;
+    while(context->running_) {
+      freenect_process_events(context->context_);
+    }
+  }
+
+  void
+  Context::InitProcessEventThread() {
+    uv_thread_create(&event_thread_, process_event_thread, this);
+  }
+
+  void
+  Context::Resume() {
+    if (! running_) {
+      running_ = true;
+      InitProcessEventThread();
+    }
+  }
+
+  Handle<Value>
+  Context::Resume(const Arguments& args) {
+    GetContext(args)->Resume();
+    return Undefined();
+  }
+
+  void
+  Context::Pause() {
+    if (running_) {
+      running_ = false;
+      uv_thread_join(&event_thread_);
+    }
+  }
+
+  Handle<Value>
+  Context::Pause(const Arguments& args) {
+    GetContext(args)->Pause();
+    return Undefined();
+  }
+
+
+  /********************************/
   /********* Video ****************/
+  /********************************/
 
   static void
   async_video_callback(uv_async_t *handle, int notUsed) {
@@ -78,12 +138,15 @@ namespace kinect {
     Context* context = (Context *) freenect_get_user(dev);
     assert(context != NULL);
     context->uv_async_video_callback_.data = (void *) context;
+    // uv_mutex_lock(&context->bufferMutex_);
     uv_async_send(&context->uv_async_video_callback_);
-    
   }
 
   void
   Context::VideoCallback() {
+    
+    assert(videoBuffer_ != NULL);
+    
     if (videoCallbackSymbol.IsEmpty()) {
       videoCallbackSymbol = NODE_PSYMBOL("videoCallback");
     }
@@ -92,54 +155,31 @@ namespace kinect {
       ThrowException(Exception::Error(String::New("VideoCallback should be a function")));
     }
     Local<Function> callback = Local<Function>::Cast(callback_v);
-    Local<Value> argv[1] = { videoBuffer_};
+    
+    Handle<Value> argv[1] = { videoBuffer_->handle_ };
     callback->Call(handle_, 1, argv);
+    // uv_mutex_unlock(&bufferMutex_);
   }
 
   void
   Context::SetVideoCallback() {
-    node::Buffer *slowBuffer;
-    void * bufferPtr;
-    freenect_frame_mode mode;
-    
     if (!videoCallback_) {
 
-      printf("Setting the Video callback...\n");
       freenect_set_video_callback(device_, video_callback);
 
       videoCallback_ = true;
-      mode = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
-      assert(mode.is_valid);
-      if (freenect_set_video_mode(device_, mode) != 0) {
+      if (freenect_set_video_mode(device_, mode_) != 0) {
         ThrowException(Exception::Error(String::New("Error setting Video mode")));
         return;
       };
 
-      // Allocate buffer
-
-      int length = mode.bytes;
-      printf("Allocating Video buffer...\n");
-      slowBuffer = node::Buffer::New(length);
-      v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
-      v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
-      v8::Handle<v8::Value> constructorArgs[3] = { slowBuffer->handle_, v8::Integer::New(length), v8::Integer::New(0) };
-      videoBuffer_ = bufferConstructor->NewInstance(3, constructorArgs);
-      bufferPtr = node::Buffer::Data(slowBuffer);
-
-      if (freenect_set_video_buffer(device_, bufferPtr) != 0) {
+      videoBuffer_ = Buffer::New(mode_.bytes);
+      videoBufferPersistentHandle_ = Persistent<Value>::New(videoBuffer_->handle_);
+      if (freenect_set_video_buffer(device_, Buffer::Data(videoBuffer_)) != 0) {
         ThrowException(Exception::Error(String::New("Error setting Video buffer")));
-        return;
-      };
-    }
+      }
 
-    if (freenect_set_depth_mode(device_, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_11BIT)) != 0) {
-      ThrowException(Exception::Error(String::New("Error setting depth mode")));
-      return;
-    };
 
-    if (freenect_start_depth(device_) != 0) {
-      ThrowException(Exception::Error(String::New("Error starting depth")));
-      return;
     }
 
     if (freenect_start_video(device_) != 0) {
@@ -150,7 +190,8 @@ namespace kinect {
 
   Handle<Value>
   Context::SetVideoCallback(const Arguments& args) {
-    
+    HandleScope scope;
+
     GetContext(args)->SetVideoCallback();
 
     return Undefined();
@@ -195,7 +236,6 @@ namespace kinect {
     
     if (!depthCallback_) {
       depthCallback_ = true;
-      printf("Setting the depth callback...\n");
       freenect_set_depth_callback(device_, depth_callback);
       mode = freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_11BIT);
       assert(mode.is_valid);
@@ -207,7 +247,6 @@ namespace kinect {
       // Allocate buffer
 
       int length = mode.bytes;
-      printf("Allocating depth buffer...\n");
       slowBuffer = node::Buffer::New(length);
       v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
       v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
@@ -334,24 +373,10 @@ namespace kinect {
     NODE_SET_PROTOTYPE_METHOD(t, "led",   Led);
     NODE_SET_PROTOTYPE_METHOD(t, "setDepthCallback", SetDepthCallback);
     NODE_SET_PROTOTYPE_METHOD(t, "setVideoCallback", SetVideoCallback);
+    NODE_SET_PROTOTYPE_METHOD(t, "pause",            Pause);
+    NODE_SET_PROTOTYPE_METHOD(t, "resume",           Resume);
 
     target->Set(String::NewSymbol("Context"), t->GetFunction());
-  }
-
-  void
-  process_event_thread(void *arg) {
-    Context * context = (Context *) arg;
-    while(context->running_) {
-      freenect_process_events(context->context_);
-    }
-  }
-
-  void
-  Context::InitProcessEventThread() {
-    uv_loop_t *loop = uv_default_loop();
-    uv_async_init(loop, &uv_async_video_callback_, async_video_callback);
-    uv_async_init(loop, &uv_async_depth_callback_, async_depth_callback);
-    uv_thread_create(&event_thread_, process_event_thread, this);
   }
 
   Context::Context(int user_device_number) : ObjectWrap() {
@@ -359,7 +384,7 @@ namespace kinect {
     device_          = NULL;
     depthCallback_   = false;
     videoCallback_   = false;
-    running_         = true;
+    running_         = false;
 
     if (freenect_init(&context_, NULL) < 0) {
       ThrowException(Exception::Error(String::New("Error initializing freenect context")));
@@ -375,8 +400,6 @@ namespace kinect {
       return; 
     }
 
-    // TODO: select device in constructor
-
     if (freenect_open_device(context_, &device_, user_device_number) < 0) {
       Close();
       ThrowException(Exception::Error(String::New("Could not open device number\n")));
@@ -385,7 +408,15 @@ namespace kinect {
 
     freenect_set_user(device_, this);
 
-    InitProcessEventThread();
+    // Initialize mode
+    mode_ = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
+    assert(mode_.is_valid);
+
+    // LibUV stuff
+    uv_loop_t *loop = uv_default_loop();
+    uv_mutex_init(&bufferMutex_);
+    uv_async_init(loop, &uv_async_video_callback_, async_video_callback);
+    uv_async_init(loop, &uv_async_depth_callback_, async_depth_callback);
   }
 
   void

@@ -6,12 +6,10 @@ describe("Led", function() {
   var context;
 
   beforeEach(function() {
-    console.log('creating context');
     context = Kinect();
   });
 
   afterEach(function() {
-    console.log('closing context');
     context.close();
   });
 

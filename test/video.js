@@ -14,14 +14,23 @@ describe("Depth", function() {
   });
 
   it("should allow to pass in a depth callback", function(done) {
-    this.timeout(5000);
+    this.timeout(60000);
     context.activate('video');
-    context.once('video', function(buf) {
-      assert(!! buf);
-      assert(buf instanceof Buffer);
-      assert(buf.length > 0);
-      assert.equal(buf.length, 640 * 480 * 3);
-      done(); 
-    });
+    context.resume();
+    var missingFrames = 1000;
+
+    function handleVideo(buf) {
+      if (-- missingFrames == 0) {
+        context.removeListener('video', handleVideo);
+      }
+      if (! (missingFrames % 10))
+        process.stdout.write('.');
+      assert(buf instanceof Buffer, 'buf is not an instance of Buffer');
+      assert(buf.length > 0, 'Buffer length is zero');
+      assert.equal(buf.length, 640 * 480 * 3, 'Buffer length is ' + buf.length);
+
+      if (missingFrames == 0) done();
+    }
+    context.on('video', handleVideo);
   });
 });
