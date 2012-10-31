@@ -1,7 +1,7 @@
 var Kinect = require('..');
 var assert = require('assert');
 
-describe("Depth", function() {
+describe("Video", function() {
 
   var context;
 
