@@ -24,7 +24,15 @@ Context.prototype.activate = function(wat) {
       break;
 
     default: throw new Error('Cannot activate ' + wat);
-  };
+  }
+};
+
+kinect.Context.prototype.depthCallback = function depthCallback(depthBuffer, time) {
+  this._context.emit('depth', depthBuffer, time);
+};
+
+kinect.Context.prototype.videoCallback = function videoCallback(videoBuffer, time) {
+  this._context.emit('video', videoBuffer, time);
 };
 
 Context.prototype.led = function lef(color) {
@@ -40,14 +48,7 @@ module.exports = function(options) {
   if (! options.device) options.device = 0;
   var kContext = new kinect.Context(options.device);
   var context = new Context(kContext);
-
-  kContext.depthCallback = function depthCallback(depthBuffer, time) {
-    context.emit('depth', depthBuffer, time);
-  };
-
-  kContext.videoCallback = function videoCallback(videoBuffer, time) {
-    context.emit('video', videoBuffer, time);
-  };
+  kContext._context = context;
   
   return context;
 };

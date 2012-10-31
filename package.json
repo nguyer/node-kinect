@@ -1,5 +1,6 @@
 {
   "name": "kinect",
+  "description": "Experimental!!!!",
   "version": "0.1.0",
   "author": "Pedro Teixeira",
   "main": "kinect.js",
@@ -8,6 +9,6 @@
   },
   "scripts": {
     "install": "node-waf configure build",
-    "test":    "node test/*.js"
+    "test":    "node_modules/.bin/mocha test/*.js"
   }
 }

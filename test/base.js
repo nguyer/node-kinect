@@ -1,20 +1,28 @@
-var kinect = require('..');
+var Kinect = require('..');
 var assert = require('assert');
 
 describe("Initialization", function() {
+  var context;
+
+  afterEach(function() {
+    if (context) {
+      context.close();
+      context = null;
+    }
+  });
+
   it('Initializes and shuts down', function() {
-    var context = kinect({device: 0});
-    context.close();
+    context = Kinect();
   });
 
   it('Fails on device not present', function() {
     assert.throws(function() {
-      kinect({device: 1});
+      context = Kinect({device: 100});
     });
   });
 
   it("Fails to activate unknown feature", function() {
-    var context = kinect();
+    context = Kinect();
     assert.throws(function() {
       context.activate('yabayaba');
     });
