@@ -1,4 +1,4 @@
-var kinect       = require('./build/Release/node-kinect.node');
+var kinect       = require('./build/Release/kinect.node');
 var EventEmitter = require('events').EventEmitter;
 var inherits     = require('util').inherits;
 var assert       = require('assert');

@@ -5,7 +5,9 @@
 #include "node_buffer.h"
 #include "uv.h"
 
-#include "libfreenect.h"
+extern "C" {
+  #include <libfreenect/libfreenect.h>
+}
 
 #include <stdio.h>
 #include <stdexcept>

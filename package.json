@@ -8,7 +8,6 @@
     "mocha": "*"
   },
   "scripts": {
-    "install": "node-waf configure build",
     "test":    "node_modules/.bin/mocha test/*.js"
   }
 }
