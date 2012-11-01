@@ -1,13 +1,17 @@
 {
   "name": "kinect",
   "description": "Experimental!!!!",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "Pedro Teixeira",
   "main": "kinect.js",
+  "tags": ["kinect"],
   "devDependencies": {
     "mocha": "*"
   },
   "scripts": {
     "test":    "node_modules/.bin/mocha test/*.js"
-  }
+  },
+  "repository": 
+   { "type": "git",
+     "url": "http://github.com/pgte/konphyg.git" },
 }
