@@ -66,6 +66,38 @@ Accepts these strings as sole argument:
 * "blink green"
 * "blink red yellow"
 
+## Video
+
+Enable video:
+
+```js
+context.start('video');
+```
+
+Listen for video frames:
+
+```js
+context.on('video', function(buf) {
+  // buf is RGB-encoded, 640 x 480
+});
+```
+
+## Depth
+
+Enable depth:
+
+```js
+context.start('depth');
+```
+
+Listen for depth frames:
+
+```js
+context.on('video', function(buf) {
+  // each depth pixel in buf has 2 bytes, 640 x 480
+});
+```
+
 # FAQ
 
 ## Can you control more than 1 kinect device at the same time?

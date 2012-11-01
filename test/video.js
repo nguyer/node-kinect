@@ -15,7 +15,7 @@ describe("Video", function() {
 
   it("should allow to pass in a depth callback", function(done) {
     this.timeout(60000);
-    context.activate('video');
+    context.start('video');
     context.resume();
     var missingFrames = 1000;
 

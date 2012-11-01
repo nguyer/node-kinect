@@ -31,6 +31,8 @@ Context.prototype.activate = function(wat) {
   this._activated[wat] = true;
 };
 
+Context.prototype.start = Context.prototype.activate;
+
 kinect.Context.prototype.depthCallback = function depthCallback(depthBuffer) {
   this._context.emit('depth', depthBuffer);
 };
