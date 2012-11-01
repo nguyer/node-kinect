@@ -10,14 +10,15 @@ Kinect in Node.js.
 Then:
 
 ```sh
-$ git clone
-``
+$ git clone git://github.com/pgte/node-kinect.git
+```
 
 # Test
 
 Plug your kinect and do:
 
 ```sh
+$ cd node-kinect
 $ npm test
 ```
 
