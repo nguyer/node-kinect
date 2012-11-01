@@ -49,6 +49,20 @@ Options:
 
 * device: integer for device number. Default is 0
 
+## Resuming / pausing
+
+Kinect is paused by default, to start pumping video or depth you need to resume it like this:
+
+```js
+context.resume();
+```
+
+You can also pause it like this:
+
+```js
+context.pause();
+```
+
 ## LED
 
 ```js
