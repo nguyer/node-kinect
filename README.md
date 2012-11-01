@@ -94,7 +94,7 @@ Listen for depth frames:
 
 ```js
 context.on('video', function(buf) {
-  // each depth pixel in buf has 2 bytes, 640 x 480
+  // each depth pixel in buf has 2 bytes, 640 x 480, 11 bit resolution
 });
 ```
 
