@@ -277,10 +277,7 @@ namespace kinect {
 
   void
   Context::Tilt(const double angle) {
-    if (freenect_set_tilt_degs(device_, angle) < 0) {
-      ThrowException(Exception::Error(String::New("Error setting tilt")));
-      return;
-    }
+    freenect_set_tilt_degs(device_, angle);
   }
 
   Handle<Value>
