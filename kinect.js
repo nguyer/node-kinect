@@ -45,6 +45,10 @@ Context.prototype.led = function lef(color) {
   this._kContext.led(color);
 };
 
+Context.prototype.tilt = function tilt(angle) {
+  this._kContext.tilt(angle);
+};
+
 Context.prototype.close = function close() {
   this._kContext.close();
 };

@@ -47,6 +47,9 @@ namespace kinect {
       void                  Led              (const std::string option);
       static Handle<Value>  Led              (const Arguments &args);
 
+      void                  Tilt             (const double angle);
+      static Handle<Value>  Tilt             (const Arguments &args);
+
       void                  SetDepthCallback ();
       static Handle<Value>  SetDepthCallback (const Arguments &args);
 
@@ -270,6 +273,33 @@ namespace kinect {
     return Undefined();
   }
 
+  /**** Tilt Control *****/
+
+  void
+  Context::Tilt(const double angle) {
+    if (freenect_set_tilt_degs(device_, angle) < 0) {
+      ThrowException(Exception::Error(String::New("Error setting tilt")));
+      return;
+    }
+  }
+
+  Handle<Value>
+  Context::Tilt(const Arguments& args) {
+    HandleScope scope;
+
+    if (args.Length() == 1) {
+      if (!args[0]->IsNumber()) {
+        return ThrowException(Exception::TypeError(
+          String::New("tilt argument must be a number")));
+      }
+    } else {
+      return ThrowException(Exception::Error(String::New("Expecting at least one argument with the led status")));
+    }
+
+    double angle = args[0]->ToNumber()->NumberValue();
+    GetContext(args)->Tilt(angle);
+    return Undefined();
+  }
 
   /**** LED Control ******/
 
