@@ -40,24 +40,24 @@ namespace kinect {
       Context(int user_device_number);
       static Handle<Value>  New              (const Arguments& args);
       static Context*       GetContext       (const Arguments &args);
-      
+
       void                  Close            ();
       static Handle<Value>  Close            (const Arguments &args);
-      
+
       void                  Led              (const std::string option);
       static Handle<Value>  Led              (const Arguments &args);
 
       void                  SetDepthCallback ();
-      static Handle<Value>  SetDepthCallback (const Arguments &args);      
+      static Handle<Value>  SetDepthCallback (const Arguments &args);
 
       void                  SetVideoCallback ();
-      static Handle<Value>  SetVideoCallback (const Arguments &args);      
+      static Handle<Value>  SetVideoCallback (const Arguments &args);
 
       void                  Pause            ();
-      static Handle<Value>  Pause            (const Arguments &args);      
+      static Handle<Value>  Pause            (const Arguments &args);
 
       void                  Resume           ();
-      static Handle<Value>  Resume           (const Arguments &args);      
+      static Handle<Value>  Resume           (const Arguments &args);
 
       void                  InitProcessEventThread();
 
@@ -67,11 +67,11 @@ namespace kinect {
       Handle<Value>         videoBufferPersistentHandle_;
       Buffer*               depthBuffer_;
       Handle<Value>         depthBufferPersistentHandle_;
-      
+
       freenect_device*      device_;
       freenect_frame_mode   videoMode_;
       freenect_frame_mode   depthMode_;
-      
+
       uv_thread_t           event_thread_;
 
   };
@@ -151,7 +151,7 @@ namespace kinect {
   Context::VideoCallback() {
     sending_ = true;
     assert(videoBuffer_ != NULL);
-    
+
     if (videoCallbackSymbol.IsEmpty()) {
       videoCallbackSymbol = NODE_PSYMBOL("videoCallback");
     }
@@ -160,7 +160,7 @@ namespace kinect {
       ThrowException(Exception::Error(String::New("VideoCallback should be a function")));
     }
     Local<Function> callback = Local<Function>::Cast(callback_v);
-    
+
     Handle<Value> argv[1] = { videoBuffer_->handle_ };
     callback->Call(handle_, 1, argv);
     sending_ = false;
@@ -264,7 +264,7 @@ namespace kinect {
 
   Handle<Value>
   Context::SetDepthCallback(const Arguments& args) {
-    
+
     GetContext(args)->SetDepthCallback();
 
     return Undefined();
@@ -317,7 +317,7 @@ namespace kinect {
     GetContext(args)->Led(std::string(*val));
     //GetContext(args)->Led(std::string("green"));
     return Undefined();
-   }
+  }
 
 
   /********* Life Cycle ***********/
@@ -356,6 +356,7 @@ namespace kinect {
 
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
     NODE_SET_PROTOTYPE_METHOD(t, "led",   Led);
+    NODE_SET_PROTOTYPE_METHOD(t, "tilt",   Tilt);
     NODE_SET_PROTOTYPE_METHOD(t, "setDepthCallback", SetDepthCallback);
     NODE_SET_PROTOTYPE_METHOD(t, "setVideoCallback", SetVideoCallback);
     NODE_SET_PROTOTYPE_METHOD(t, "pause",            Pause);
@@ -382,7 +383,7 @@ namespace kinect {
     if (nr_devices < 1) {
       Close();
       ThrowException(Exception::Error(String::New("No kinect devices present")));
-      return; 
+      return;
     }
 
     if (freenect_open_device(context_, &device_, user_device_number) < 0) {
@@ -411,7 +412,7 @@ namespace kinect {
   Context::Close() {
 
     running_ = false;
-    
+
     if (device_ != NULL) {
       if (freenect_close_device(device_) < 0) {
         ThrowException(Exception::Error(String::New(("Error closing device"))));
@@ -426,7 +427,7 @@ namespace kinect {
         ThrowException(Exception::Error(String::New(("Error shutting down"))));
         return;
       }
-        
+
       context_ = NULL;
     }
   }

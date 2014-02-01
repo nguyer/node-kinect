@@ -63,6 +63,6 @@ module.exports = function(options) {
   var kContext = new kinect.Context(options.device);
   var context = new Context(kContext);
   kContext._context = context;
-  
+
   return context;
 };
