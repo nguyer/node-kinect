@@ -113,6 +113,16 @@ context.on('video', function(buf) {
 });
 ```
 
+## Tilt
+
+Set tilt angle:
+
+```js
+context.tilt(angle);
+```
+
+`angle` can be any number from -15 to 15. Number out of the range will be set to min/max.
+
 # FAQ
 
 ## Can you control more than 1 kinect device at the same time?
