@@ -8,6 +8,12 @@
       'libraries': [
          'libfreenect.a',
       ],
+      'conditions': [
+        ['OS=="mac"', {
+          'include_dirs': ['/usr/local/include'],
+          'library_dirs': ['/usr/local/lib'],
+        }],
+      ]
     }
   ]
 }
